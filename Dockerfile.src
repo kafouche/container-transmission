@@ -1,0 +1,113 @@
+# Dockerfile: transmission
+# Kafouche Transmission Image (source).
+
+LABEL       org.opencontainers.image.authors="kafouche"
+LABEL       org.opencontainers.image.base.name="ghcr.io/kafouche/transmission:4.0.6"
+LABEL       org.opencontainers.image.ref.name="ghcr.io/kafouche/alpine"
+LABEL       org.opencontainers.image.source="https://github.com/kafouche/docker-transmission"
+LABEL       org.opencontainers.image.title="Transmission BitTorrent"
+LABEL       org.opencontainers.image.version="4.0.6"
+LABEL       image.tags[0]="ghcr.io/kafouche/transmission:latest-src"
+
+ARG         RELEASE=4.0.6
+ARG         ARCHIVE=https://github.com/transmission/transmission/releases/download/$RELEASE/transmission-$RELEASE.tar.xz
+
+# BUILD STAGE
+
+FROM        ghcr.io/kafouche/alpine:latest as buildstage
+
+ARG         RELEASE
+ARG         ARCHIVE
+
+RUN         apk --no-cache --update upgrade \
+            && apk --no-cache --update add \
+              clang \
+              cmake \
+              curl-dev \
+              gettext-dev \
+              gtest-dev \
+              linux-headers \
+              openssl-dev \
+              patch \
+              samurai
+
+RUN         apk --no-cache --update add \
+              libdeflate-dev \
+              libevent-dev \
+              libnatpmp-dev \
+              libpsl-dev \
+              miniupnpc-dev
+
+COPY        src/miniupnpc.patch /tmp/
+
+RUN         apk --no-cache --update add \
+                curl \
+            && curl \
+              --location "${ARCHIVE}" \
+              --output /tmp/archive.tar.xz \
+            && mkdir --parents /tmp/archive \
+            && tar --directory=/tmp/archive --extract \
+              --file=/tmp/archive.tar.xz \
+              --xz --strip-components=1 \
+            && patch --directory=/tmp/archive/libtransmission/ < /tmp/miniupnpc.patch
+
+WORKDIR     /tmp/archive
+
+RUN         cmake -B build -G Ninja \
+              -DBUILD_SHARED_LIBS=OFF \
+              -DCMAKE_BUILD_TYPE=None \
+              -DCMAKE_INSTALL_PREFIX=/usr \
+              -DCMAKE_INSTALL_LIBDIR=lib \
+              -DENABLE_DEPRECATED=ON \
+              -DENABLE_CLI=OFF \
+              -DENABLE_GTK=OFF \
+              -DENABLE_NLS=OFF \
+              -DENABLE_QT=OFF \
+              -DENABLE_TESTS=ON \
+              -DUSE_SYSTEM_DEFLATE=ON \
+              -DUSE_SYSTEM_EVENT2=ON \
+              -DUSE_SYSTEM_MINIUPNPC=ON \
+              -DUSE_SYSTEM_PSL=ON \
+              -DWITH_CRYPTO="openssl" \
+              -DWITH_SYSTEMD=OFF \
+            && cmake --build build \
+            && ctest --test-dir build --output-on-failure -j4 -E LT.DhtTest.usesBootstrapFile \
+            && DESTDIR=/tmp/install/ cmake --install build
+
+# RUN STAGE
+
+FROM        ghcr.io/kafouche/alpine:latest
+
+RUN         apk --no-cache --update upgrade \
+            && apk --no-cache --update add \
+              libcurl \
+              libdeflate \
+              libevent \
+              libnatpmp \
+              libpsl \
+              libstdc++ \
+              miniupnpc
+
+
+RUN         mkdir --parents /config/torrents /downloads
+
+COPY        --from=buildstage /tmp/install/ /
+COPY        src/settings.json /config/
+
+RUN         addgroup -S transmission \
+            && adduser -D -G transmission -h /config -H -s /sbin/nologin -S transmission \
+            && chown -R transmission:transmission /config /downloads \
+            && chmod 644 /config/settings.json
+
+VOLUME      /config \
+            /downloads
+
+WORKDIR     /config
+
+EXPOSE      9091/tcp \
+            51413/tcp \
+            51413/udp
+
+USER        transmission
+
+ENTRYPOINT  [ "/usr/bin/transmission-daemon", "--config-dir", "/config", "--foreground" ]

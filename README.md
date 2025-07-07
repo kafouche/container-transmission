@@ -1,13 +1,16 @@
 # Transmission
-This image is based on *Alpine Linux* latest stable image.
+
+This image is based on *Kafouche Alpine Linux Base Image*.
 
 ## Mount / Volume
+
 | Volume       | Description         |
 |--------------|---------------------|
 | `/config`    | Config Directory.   |
 | `/downloads` | Download Directory. |
 
 ## Network Ports
+
 | Port        | Description                       |
 |-------------|-----------------------------------|
 | `9091/tcp`  | Web Interface.                    |
