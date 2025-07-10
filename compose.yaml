@@ -1,0 +1,13 @@
+services:
+  transmission:
+    image: ghcr.io/kafouche/transmission:latest
+    name: "openvpn"
+    network_mode: bridge
+    ports:
+      - "9091:9091/tcp"
+    restart: "unless-stopped"
+    #user: 1000:1000
+    volumes:
+      - type: bind
+        source: "./config/"
+        target: "/var/lib/transmission/config/"

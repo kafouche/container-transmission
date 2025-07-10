@@ -1,6 +1,6 @@
 # Transmission
 
-This image is based on *Kafouche Alpine Linux Base Image*.
+This image is based on *Kafouche Alpine Linux*.
 
 ## Mount / Volume
 
@@ -11,8 +11,8 @@ This image is based on *Kafouche Alpine Linux Base Image*.
 
 ## Network Ports
 
-| Port        | Description                       |
-|-------------|-----------------------------------|
-| `9091/tcp`  | Web Interface.                    |
-| `51413/tcp` | Transmission port for bittorrent. |
-| `51413/udp` | Transmission port for bittorrent. |
+| Port        | Description                                  |
+|-------------|----------------------------------------------|
+| `9091/tcp`  | Web Interface.                               |
+| `51413/tcp` | (Optional) Transmission port for bittorrent. |
+| `51413/udp` | (Optional) Transmission port for bittorrent. |
