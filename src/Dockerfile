@@ -9,15 +9,28 @@ LABEL       org.opencontainers.image.title="Transmission BitTorrent"
 LABEL       org.opencontainers.image.version="4.0.6"
 LABEL       image.tags[0]="ghcr.io/kafouche/transmission:latest-src"
 
+
+# ------------------------------------------------------------------------------
+
 ARG         RELEASE=4.0.6
-ARG         ARCHIVE=https://github.com/transmission/transmission/releases/download/$RELEASE/transmission-$RELEASE.tar.xz
+
+ARG         SOURCE_URL=https://github.com/transmission/transmission/releases/download/$RELEASE/transmission-$RELEASE.tar.xz
+
+ARG         SOURCE_DIR=/tmp/source
+
+ARG         SOURCE_TAR=/tmp/archive.tar.xz
+
+ARG         TARGET_DIR=/tmp/target
+
 
 # BUILD STAGE
 
 FROM        ghcr.io/kafouche/alpine:latest as buildstage
 
-ARG         RELEASE
-ARG         ARCHIVE
+ARG         SOURCE_DIR \
+            SOURCE_TAR \
+            SOURCE_URL \
+            TARGET_DIR
 
 RUN         apk --no-cache --update upgrade \
             && apk --no-cache --update add \
@@ -38,20 +51,23 @@ RUN         apk --no-cache --update add \
               libpsl-dev \
               miniupnpc-dev
 
-COPY        src/miniupnpc.patch /tmp/
+COPY        miniupnpc.patch /tmp/
 
 RUN         apk --no-cache --update add \
                 curl \
             && curl \
-              --location "${ARCHIVE}" \
-              --output /tmp/archive.tar.xz \
-            && mkdir --parents /tmp/archive \
-            && tar --directory=/tmp/archive --extract \
-              --file=/tmp/archive.tar.xz \
-              --xz --strip-components=1 \
-            && patch --directory=/tmp/archive/libtransmission/ < /tmp/miniupnpc.patch
+              --location "${SOURCE_URL}" \
+              --output "${SOURCE_TAR}" \
+            && mkdir --parents "${SOURCE_DIR}" \
+            && tar \
+              --directory="${SOURCE_DIR}" \
+              --extract \
+              --file="${SOURCE_TAR}" \
+              --xz \
+              --strip-components=1 \
+            && patch --directory="${SOURCE_DIR}/libtransmission/" < /tmp/miniupnpc.patch
 
-WORKDIR     /tmp/archive
+WORKDIR     "${SOURCE_DIR}"
 
 RUN         cmake -B build -G Ninja \
               -DBUILD_SHARED_LIBS=OFF \
@@ -72,11 +88,13 @@ RUN         cmake -B build -G Ninja \
               -DWITH_SYSTEMD=OFF \
             && cmake --build build \
             && ctest --test-dir build --output-on-failure -j4 -E LT.DhtTest.usesBootstrapFile \
-            && DESTDIR=/tmp/install/ cmake --install build
+            && DESTDIR="${TARGET_DIR}" cmake --install build
 
 # RUN STAGE
 
 FROM        ghcr.io/kafouche/alpine:latest
+
+ARG         TARGET_DIR
 
 RUN         apk --no-cache --update upgrade \
             && apk --no-cache --update add \
@@ -88,21 +106,20 @@ RUN         apk --no-cache --update upgrade \
               libstdc++ \
               miniupnpc
 
+RUN         mkdir --parents /var/lib/transmission/{config,downloads}
 
-RUN         mkdir --parents /config/torrents /downloads
-
-COPY        --from=buildstage /tmp/install/ /
-COPY        src/settings.json /config/
+COPY        --from=buildstage "${TARGET_DIR}/" /
+COPY        settings.json /var/lib/transmission/config/
 
 RUN         addgroup -S transmission \
-            && adduser -D -G transmission -h /config -H -s /sbin/nologin -S transmission \
-            && chown -R transmission:transmission /config /downloads \
-            && chmod 644 /config/settings.json
+            && adduser -D -G transmission -h /var/lib/transmission -H -s /sbin/nologin -S transmission \
+            && chown -R transmission:transmission /var/lib/transmission/ \
+            && chmod 644 /var/lib/transmission/config/settings.json
 
-VOLUME      /config \
-            /downloads
+VOLUME      /var/lib/transmission/config \
+            /var/lib/transmission/downloads
 
-WORKDIR     /config
+WORKDIR     /var/lib/transmission
 
 EXPOSE      9091/tcp \
             51413/tcp \
@@ -110,4 +127,9 @@ EXPOSE      9091/tcp \
 
 USER        transmission
 
-ENTRYPOINT  [ "/usr/bin/transmission-daemon", "--config-dir", "/config", "--foreground" ]
+ENTRYPOINT  [ \
+              "/usr/bin/transmission-daemon", \
+              "--config-dir", "/var/lib/transmission/config", \
+              "--download-dir", "/var/lib/transmission/downloads", \
+              "--foreground" \
+            ]

@@ -4,10 +4,10 @@ This image is based on *Kafouche Alpine Linux Base Image*.
 
 ## Mount / Volume
 
-| Volume       | Description         |
-|--------------|---------------------|
-| `/config`    | Config Directory.   |
-| `/downloads` | Download Directory. |
+| Volume                             | Description         |
+|------------------------------------|---------------------|
+| `/var/lib/transmission/config/`    | Config Directory.   |
+| `/var/lib/transmission/downloads/` | Download Directory. |
 
 ## Network Ports
 
