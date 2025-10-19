@@ -1,16 +1,15 @@
 # Dockerfile: transmission
 # Kafouche Transmission Image.
 
+FROM        ghcr.io/kafouche/alpine:latest
+
 LABEL       org.opencontainers.image.authors="kafouche"
 LABEL       org.opencontainers.image.base.name="ghcr.io/kafouche/transmission:latest"
 LABEL       org.opencontainers.image.ref.name="ghcr.io/kafouche/alpine"
 LABEL       org.opencontainers.image.source="https://github.com/kafouche/container-transmission"
 LABEL       org.opencontainers.image.title="Transmission BitTorrent"
 
-
 # ------------------------------------------------------------------------------
-
-FROM        ghcr.io/kafouche/alpine:latest
 
 RUN         apk --no-cache --update upgrade \
             && apk --no-cache --update add \

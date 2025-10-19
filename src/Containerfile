@@ -1,17 +1,6 @@
 # Dockerfile: transmission
 # Kafouche Transmission Image (source).
 
-LABEL       org.opencontainers.image.authors="kafouche"
-LABEL       org.opencontainers.image.base.name="ghcr.io/kafouche/transmission:4.0.6"
-LABEL       org.opencontainers.image.ref.name="ghcr.io/kafouche/alpine"
-LABEL       org.opencontainers.image.source="https://github.com/kafouche/container-transmission"
-LABEL       org.opencontainers.image.title="Transmission BitTorrent"
-LABEL       org.opencontainers.image.version="4.0.6"
-LABEL       image.tags[0]="ghcr.io/kafouche/transmission:latest-src"
-
-
-# ------------------------------------------------------------------------------
-
 ARG         RELEASE=4.0.6
 
 ARG         SOURCE_URL=https://github.com/transmission/transmission/releases/download/$RELEASE/transmission-$RELEASE.tar.xz
@@ -93,6 +82,16 @@ RUN         cmake -B build -G Ninja \
 # RUN STAGE
 
 FROM        ghcr.io/kafouche/alpine:latest
+
+LABEL       org.opencontainers.image.authors="kafouche"
+LABEL       org.opencontainers.image.base.name="ghcr.io/kafouche/transmission:4.0.6"
+LABEL       org.opencontainers.image.ref.name="ghcr.io/kafouche/alpine"
+LABEL       org.opencontainers.image.source="https://github.com/kafouche/container-transmission"
+LABEL       org.opencontainers.image.title="Transmission BitTorrent"
+LABEL       org.opencontainers.image.version="4.0.6"
+LABEL       image.tags[0]="ghcr.io/kafouche/transmission:latest-src"
+
+# ------------------------------------------------------------------------------
 
 ARG         TARGET_DIR
 
