@@ -4,7 +4,7 @@
 LABEL       org.opencontainers.image.authors="kafouche"
 LABEL       org.opencontainers.image.base.name="ghcr.io/kafouche/transmission:4.0.6"
 LABEL       org.opencontainers.image.ref.name="ghcr.io/kafouche/alpine"
-LABEL       org.opencontainers.image.source="https://github.com/kafouche/docker-transmission"
+LABEL       org.opencontainers.image.source="https://github.com/kafouche/container-transmission"
 LABEL       org.opencontainers.image.title="Transmission BitTorrent"
 LABEL       org.opencontainers.image.version="4.0.6"
 LABEL       image.tags[0]="ghcr.io/kafouche/transmission:latest-src"
