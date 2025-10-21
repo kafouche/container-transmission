@@ -1,4 +1,4 @@
-# Dockerfile: transmission
+# Containerfile: transmission
 # Kafouche Transmission Image.
 
 FROM        ghcr.io/kafouche/alpine:latest
